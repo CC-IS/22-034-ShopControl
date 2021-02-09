@@ -1,5 +1,5 @@
 module.exports = {
-  showDevTools: false,
+  showDevTools: true,
   io: {
     manufacturer: 'Silicon Labs',
   },

@@ -375,7 +375,8 @@ div.title {
 
 #welcomeOL .midFloat{
 	/* display: block; */
-	--dialog-height: 75vh;
+	--dialog-height: 90vh;
+	--dialog-width: 90vw;
 	padding-top: 22.5vh;
 	padding-left: 5vh;
 	padding-right: 5vh;
@@ -390,7 +391,8 @@ div.title {
 	border-radius: 2vh;
 	margin: 1vh;
 	padding: 2vh;
-	height: 30vh;
+	padding-top: 5vh;
+	height: 40vh;
 	background-color: #0B5091;
 	color:  #F3B61D;
 }
