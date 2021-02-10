@@ -1,0 +1,12 @@
+muse-growl {
+  font-family: sans-serif;
+  left: auto;
+  bottom: auto;
+  left: -50vw;
+  width: 33vw;
+  top: 5vh;
+}
+
+muse-growl[alert] {
+  left: 10vw;
+}

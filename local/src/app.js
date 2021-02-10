@@ -7,6 +7,7 @@ var config = remote.getGlobal('config');
 var obtains = [
   'µ/google/jwt.js',
   'µ/google/sheets_2.js',
+  'µ/components/growl.js',
   './src/sheetInfo.js',
   './src/keypad.js',
   './src/items.js',
@@ -15,7 +16,7 @@ var obtains = [
   'qrcode'
 ]
 
-obtain(obtains, ({Client}, {SpreadSheet}, {SheetInfo}, {Keypad}, {Item}, { v4: uuidv4 }, greg, qr)=>{
+obtain(obtains, ({Client}, {SpreadSheet}, growl, {SheetInfo}, {Keypad}, {Item}, { v4: uuidv4 }, greg, qr)=>{
   exports.app = {};
 
   console.log(config);
@@ -147,10 +148,12 @@ obtain(obtains, ({Client}, {SpreadSheet}, {SheetInfo}, {Keypad}, {Item}, { v4: u
   }
 
   var findUser = (userID) => {
+    mainGrowl.message('Finding User...','note',true);
     profile.objectFromKeyValue('userID', userID).then(profile=>{
+      mainGrowl.dismiss();
       console.log(profile);
       if(overlays.mode == 'acctScan') accountDialog(profile);
-      else if(overlays.mode == 'welcomeScan') signIn(profile);
+      else if(overlays.mode == 'welcomeScan' || overlays.mode == 'signInScan') signIn(profile);
       else if(overlays.mode == 'coScan') recordTransaction(profile);
     }).catch(err=>{
       if(err == 'VAL_NOT_FOUND'){
@@ -208,6 +211,11 @@ obtain(obtains, ({Client}, {SpreadSheet}, {SheetInfo}, {Keypad}, {Item}, { v4: u
       overlays.mode = 'shopScan';
     }
 
+    signInButton.onclick = e=>{
+      e.preventDefault();
+      overlays.mode = 'signInScan';
+    }
+
     cancelScan.onclick = (e)=>{
       overlays.mode = 'welcomeScan';
       e.preventDefault();
@@ -225,6 +233,7 @@ obtain(obtains, ({Client}, {SpreadSheet}, {SheetInfo}, {Keypad}, {Item}, { v4: u
       e.preventDefault();
       overlays.mode = 'welcomeScan';
       while(itemList.firstChild) itemList.removeChild(itemList.firstChild);
+      calculateTotal();
     }
 
     saveSignUp.onclick = (e)=>{
@@ -310,7 +319,7 @@ obtain(obtains, ({Client}, {SpreadSheet}, {SheetInfo}, {Keypad}, {Item}, { v4: u
         if(e.key == 'Enter'){
           quantAccept.onclick();
         }
-      } 
+      }
     };
   };
 
