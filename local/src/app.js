@@ -98,7 +98,8 @@ obtain(obtains, ({Client}, {SpreadSheet}, growl, {SheetInfo}, {Keypad}, {Item}, 
       'ea': 'each',
       'in': 'inches',
       'oz': 'ounces',
-      'g': 'grams'
+      'g': 'grams',
+      'yd': 'yards'
     };
     quantUnit.textContent = conv[data.unit];
     if(data.quantity) quantKey.input.value = data.quantity;
@@ -191,6 +192,20 @@ obtain(obtains, ({Client}, {SpreadSheet}, growl, {SheetInfo}, {Keypad}, {Item}, 
 
     /////////////////////////////////////////////////////////////////
     // element event handlers
+
+    var screensaverTO = null;
+
+    var resetSS = ()=>{
+      screensaver.classList.remove('active');
+      if(screensaverTO) clearTimeout(screensaverTO);
+      screensaverTO = setTimeout(()=>{
+        screensaver.classList.add('active');
+      }, 30000);
+    }
+
+    µ('body')[0].onclick = e=>{
+      resetSS();
+    }
 
     Object.defineProperty(overlays, 'mode', {
       get: ()=>overlays.getAttribute('mode'),
@@ -309,6 +324,7 @@ obtain(obtains, ({Client}, {SpreadSheet}, growl, {SheetInfo}, {Keypad}, {Item}, 
         if(e.keyCode > 32 && e.keyCode < 127){
           scanString += e.key;
         } else if(e.key == 'Enter'){
+          resetSS();
           onScan(scanString);
           scanString = '';
         }
