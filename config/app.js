@@ -3,7 +3,8 @@ module.exports = {
   io: {
     manufacturer: 'Silicon Labs',
   },
-  location: 'makerspace'
+  location: 'makerspace',
+  startDelay: 20000,
   // windows: [
   //   {
   //     label: 'main',

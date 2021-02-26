@@ -13,10 +13,11 @@ var obtains = [
   './src/items.js',
   'uuid',
   'greg',
-  'qrcode'
+  'qrcode',
+  'child_process'
 ]
 
-obtain(obtains, ({Client}, {SpreadSheet}, growl, {SheetInfo}, {Keypad}, {Item}, { v4: uuidv4 }, greg, qr)=>{
+obtain(obtains, ({Client}, {SpreadSheet}, growl, {SheetInfo}, {Keypad}, {Item}, { v4: uuidv4 }, greg, qr, {execSync})=>{
   exports.app = {};
 
   console.log(config);
@@ -185,6 +186,8 @@ obtain(obtains, ({Client}, {SpreadSheet}, growl, {SheetInfo}, {Keypad}, {Item}, 
       findUser(scanResult);
     } else if (scanResult.length == 16){
       findUser(scanResult.substring(1,15));
+    } else if (scanResult == '0028'){
+      execSync('sudo shutdown now');
     }
   }
 
