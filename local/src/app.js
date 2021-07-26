@@ -3,6 +3,7 @@
 var remote = require('electron').remote;
 var appRoot = remote.getGlobal('appRoot');
 var config = remote.getGlobal('config');
+var os = require('os');
 
 var obtains = [
   'µ/google/jwt.js',
@@ -27,7 +28,10 @@ obtain(obtains, ({Client}, {SpreadSheet}, growl, {SheetInfo}, {Keypad}, {Item}, 
     'https://www.googleapis.com/auth/spreadsheets'
   ];
 
-  var auth = Client(scopes, appRoot + '/.credentials/trackerJWT_2.json');
+  var credDir = `${appRoot}/.credentials/`;
+  if(os.platform() == 'linux') credDir = '/boot/.credentials/'
+
+  var auth = Client(scopes, credDir + 'trackerJWT_2.json');
 
   var materials = new SpreadSheet({
     auth: auth,
