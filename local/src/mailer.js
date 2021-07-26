@@ -2,8 +2,12 @@ const sgMail = require('@sendgrid/mail')
 var remote = require('electron').remote;
 var appRoot = remote.getGlobal('appRoot');
 const path = require('path');
+var os = require('os');
 
-sgMail.setApiKey(require(path.resolve(appRoot + '/.credentials/sendgrid.json')).key);
+var credDir = `${appRoot}/.credentials/`;
+if(os.platform() == 'linux') credDir = '/boot/.credentials/'
+
+sgMail.setApiKey(require(path.resolve(credDir + 'sendgrid.json')).key);
 
 exports.sendMail = msg=>{
   return sgMail.send(msg)
