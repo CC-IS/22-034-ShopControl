@@ -1,150 +1,108 @@
-class SheetInfo extends Array{
-  constructor( sheet, subsheet){
-    super();
-    var _this = this;
-    this.sub = subsheet;
-    this.sheet = sheet;
+class getDataFromSheet {
 
-    this.initProm = this.query(`${_this.sub}!1:1`).then((values)=>{
-      _this.length = 0;
-      values[0].forEach(val => _this.push(val));
-    });
-
+  constructor(spreadsheetId, sheetName, keyFile) {
+    this.authorize(keyFile);
+    this.spreadsheetId = spreadsheetId;
+    this.sheetName = sheetName;
+    this.users = [];
+    this.usrs = [];
+    this.usersarr = []
+    this.keyFile = keyFile;
   }
 
-  query(range){
-    if(this.initProm && this.initProm.pending){
-      console.log('pending');
-      return this.initProm.then(()=>{
-        this.sheet.getData(range, (err, result)=>{
-          if(err) throw(err);
-          else return(result.data.values);
+
+  async update() {
+    var _this = this;
+    await this.getBatch().then((result) => {
+      this.usrs = result.data.valueRanges[0].values;
+
+      var keys = this.usrs[0];
+      _this.adminPresent = this.usrs[1][1];
+      this.usrs.slice(2).forEach((row, i) => {
+        _this.users[i] = {}
+        keys.forEach((key, j) => {
+          _this.users[i][key] = row[j];
         });
       });
-    } else return new Promise((resolve,reject)=>{
-      this.sheet.getData(range, (err, result)=>{
-        if(err) reject(err);
-        else resolve(result.data.values);
-      });
     });
+    this.users.forEach((user, index) => {
+      this.usersarr[index] = user.userRFID;
+    })
+    return;
   }
-
-  col(key){
-    var _this = this;
-    return String.fromCharCode(65 + _this.indexOf(key));
+  getUser(UID) {
+    return this.users[this.usersarr.indexOf(UID)];
   }
+  authorize(keyFile) {
+    const { google } = require("googleapis");
+    this.googleSheets = google.sheets({ version: "v4", auth: this.client });
 
-  keyRange(key, rStart = '', rEnd = ''){
-    var cl = this.col(key);
-    return `${this.sub}!${cl+rStart}:${cl+rEnd}`;
-  }
-
-  rangeFromKeyValue(key, value){
-    var _this = this;
-    return _this.initProm.then(()=>{
-      return _this.query(_this.keyRange(key)).then((values)=>{
-        var row = values.findIndex(el => el[0] == value) + 1;
-        if(row > 0) return(`${_this.sub}!${row}:${row}`);
-        else throw('VAL_NOT_FOUND');
-      });
+    this.auth = new google.auth.GoogleAuth({
+      keyFile,
+      scopes: "https://www.googleapis.com/auth/spreadsheets"
     });
+    this.client = this.auth.getClient();
   }
-
-  rangesFromKeyValues(key, searched){
-    var _this = this;
-    return _this.initProm.then(()=>{
-      return _this.query(_this.keyRange(key)).then((values)=>{
-        var range = '';
-        searched.forEach((sought,i) => {
-          var row = values.findIndex(el => el[0] == value) + 1;
-          if(row > 0) range += `${_this.sub}!${row}:${row}`;//return(`${_this.sub}!${row}:${row}`);
-          else throw('VAL_NOT_FOUND');
-          if(i<searched.length-1) range+=',';
-        });
-        return range;
-      });
-    });
-  }
-
-  rowFromKeyValue(key, value){
-    var _this = this;
-    return _this.rangeFromKeyValue(key, value).then((range)=>{
-      return _this.query(range);
-    });
-  }
-
-  rowsFromKeyValues(key, values){
-    var _this = this;
-    console.log(values);
-    return _this.rangesFromKeyValues(key, values).then((ranges)=>{
-      return _this.query(ranges);
-    });
-  }
-
-  objectFromKeyValue(key, value){
-    var _this = this;
-    return _this.rowFromKeyValue(key, value).then(values=>{
-      var ret = {};
-      _this.forEach((key, i) => {
-        ret[key] = values[0][i];
-      });
-      return ret;
+  async getBatch() {
+    return await this.googleSheets.spreadsheets.values.batchGet({
+      auth: this.auth,
+      spreadsheetId: this.spreadsheetId,
+      ranges: [this.sheetName]
     })
   }
 
-  objectArrayFromValues(key, values){
-    var _this = this;
-    return _this.rowsFromKeyValues(key, value).then(values=>values.map(val=>{
-      var ret = {};
-      _this.forEach((selfKey, i) => {
-        ret[selfKey] = val[i];
-      });
-
-    }));
-  }
-
-  amendOrAddFromObject(obj, key){
-    var _this = this;
-    return this.initProm.then(()=>{
-      return _this.rangeFromKeyValue(key, obj[key]).then(range=>{
-        return _this.amendRowFromObject(obj, range);
-      }).catch(err=>{
-        if(err == 'VAL_NOT_FOUND') return _this.addRowFromObject(obj);
-      });
-    });
-  }
-
-  amendRowFromObject(obj, range){
-    var data = [];
-    data[0] = [];
-    var _this = this;
-    _this.forEach((item, i) => {
-      if(obj[item]) data[0][i] = obj[item];
-    });
-
-    return this.initProm.then(()=>{
-      _this.sheet.putData(range, data, (err,res)=>{
-        if(err) throw error;
-        else return res;
-      });
+  async changeCell(A1, value) {
+    await this.googleSheets.spreadsheets.values.update({
+      auth: this.auth,
+      spreadsheetId: this.spreadsheetId,
+      range: [`${this.sheetName}!${A1}`],
+      valueInputOption: 'USER-ENTERED',
+      resource: {
+        values: [[value]],
+      }
     })
   }
+  async addUser(UID, devName) {
+    if (this.usersarr.includes(UID)) {
+      this.changeCell(`${String.fromCharCode(68 + this.getDevNum(UID))}${this.getIndex(UID) + 3}`, 1);
+      console.log(`User ${UID} permitted access successfully to ${devName}`);
+      this.authorize(this.keyFile);
+    } else {
+      this.addNewRow(UID).then(() => {
+        console.log(`User ${UID} was added to database. Granting access...`)
+        this.addUser(UID, devName);
+      })
+    }
+  }
+  async addNewRow(UID) {
+    if (this.usersarr.includes(UID)) { return; }
+    await this.googleSheets.spreadsheets.values.append({
+      auth: this.auth,
+      spreadsheetId: this.spreadsheetId,
+      range: `${sheetName}!A:B`,
+      valueInputOption: "USER_ENTERED",
+      resource: {
+        values: [[UID, 0, 0, 0, 0, 0, 0]],
+      },
+    })
+  }
+  isUser(UID) {
+    // var _this = this;
+    return JSON.stringify(this.users).includes(UID);
 
-  addRowFromObject(obj){
-    var data = [];
-    data[0] = [];
-    var _this = this;
-    _this.forEach((item, i) => {
-      if(obj[item]) data[0][i] = obj[item];
-    });
-
-    return this.initProm.then(()=>{
-      this.sheet.appendData(`${_this.sub}!A1:A1`, data, (err,res)=>{
-        if(err) throw err;
-        else return res;
-      });
-    });
+  }
+  getIndex(UID) {
+    let index2;
+    this.users.forEach((Element, index) => {
+      // console.log (Element);
+      if (Element['userRFID'] && Element['userRFID'] == UID) {
+        index2 = index;
+      }
+    })
+    return index2;
+  }
+  getDevNum(name) {
+    return this.usrs[0].indexOf(name)
   }
 }
-
-exports.SheetInfo = SheetInfo;
+exports.getDataFromSheet = getDataFromSheet;

@@ -4,6 +4,8 @@ var remote = require('electron').remote;
 var appRoot = remote.getGlobal('appRoot');
 var config = remote.getGlobal('config');
 var os = require('os');
+const handler = require('./server_handler');
+handler();
 
 var obtains = [
   'µ/google/jwt.js',
@@ -19,7 +21,7 @@ var obtains = [
   './src/mailer.js'
 ]
 
-obtain(obtains, ({Client}, {SpreadSheet}, growl, {SheetInfo}, {Keypad}, {Item}, { v4: uuidv4 }, greg, qr, {execSync}, {sendMail})=>{
+obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, { Item }, { v4: uuidv4 }, greg, qr, { execSync }, { sendMail }) => {
   exports.app = {};
 
   console.log(config);
@@ -29,7 +31,7 @@ obtain(obtains, ({Client}, {SpreadSheet}, growl, {SheetInfo}, {Keypad}, {Item}, 
   ];
 
   var credDir = `${appRoot}/.credentials/`;
-  if(os.platform() == 'linux') credDir = '/boot/.credentials/'
+  if (os.platform() == 'linux') credDir = '/boot/.credentials/'
 
   var auth = Client(scopes, credDir + 'trackerJWT_2.json');
 
@@ -54,71 +56,71 @@ obtain(obtains, ({Client}, {SpreadSheet}, growl, {SheetInfo}, {Keypad}, {Item}, 
 
   var imgCanv = µ('+canvas');
   const headerImg = new Image();
-  headerImg.onload = function() {
+  headerImg.onload = function () {
     imgCanv.width = headerImg.width;
     imgCanv.height = headerImg.height;
     var ctx = imgCanv.getContext('2d');
-    ctx.drawImage(headerImg, 0,0,headerImg.width, headerImg.height);
+    ctx.drawImage(headerImg, 0, 0, headerImg.width, headerImg.height);
   }
   headerImg.src = 'img/LogoHeaderSmall.png';
 
-////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////
 
-  var newUserDialog = (userID)=>{
+  var newUserDialog = (userID) => {
     userInfoOL.data = { userID: userID };
     overlays.mode = 'acct';
     µ('input', userInfoOL).forEach(inp => {
       inp.classList.remove('warn');
-      if(inp.id != 'mailList') inp.value = '';
+      if (inp.id != 'mailList') inp.value = '';
     });
   }
 
-  var accountDialog = acct=>{
+  var accountDialog = acct => {
     userInfoOL.data = acct;
     overlays.mode = 'acct';
     for (var key in acct) {
       if (acct.hasOwnProperty(key) && key != 'userID') {
-        if(key != 'mailList') µ(`#${key}`, userInfoOL).value = acct[key];
+        if (key != 'mailList') µ(`#${key}`, userInfoOL).value = acct[key];
       }
     }
   }
 
-  var getTools = toolCodes=>{
-      return toolCheckouts.objectArrayFromKeyValues('code',toolCodes);
+  var getTools = toolCodes => {
+    return toolCheckouts.objectArrayFromKeyValues('code', toolCodes);
   }
 
-  var getToolCheckouts = profile=>{
-    toolCheckouts.objectFromKeyValue('user', profile.email).then((data)=>{
+  var getToolCheckouts = profile => {
+    toolCheckouts.objectFromKeyValue('user', profile.email).then((data) => {
       console.log('got checkouts')
       console.log(data);
       var tools = JSON.parse(data.tools);
       console.log(tools);
       var toolInd = 0;
 
-      if(tools.length) getTools(tools.map(tool=>tool.code)).then(tools=>{
+      if (tools.length) getTools(tools.map(tool => tool.code)).then(tools => {
         console.log(tools);
       })
 
-    }).catch(err=>{
-      if(err == 'VAL_NOT_FOUND') console.log('no tools checked out');
+    }).catch(err => {
+      if (err == 'VAL_NOT_FOUND') console.log('no tools checked out');
     });
   }
 
-  var startOrder = ()=>{
+  var startOrder = () => {
 
   }
 
   var recordTransaction = profile => {
     console.log(profile);
     var cart = µ('ms-item');
-    var list = cart.map(item=>item.listify())
+    var list = cart.map(item => item.listify())
     console.log(list);
     var newTA = {
       uuid: uuidv4(),
       userID: profile.userID,
       userEmail: profile.email,
       jsonCart: JSON.stringify(list),
-      cartTotal: cart.reduce((acc,item)=>acc + item.getSubtotal(), 0),
+      cartTotal: cart.reduce((acc, item) => acc + item.getSubtotal(), 0),
       projectDescription: projectDescription.value
     }
 
@@ -160,7 +162,7 @@ obtain(obtains, ({Client}, {SpreadSheet}, growl, {SheetInfo}, {Keypad}, {Item}, 
       ]
     }
 
-    while(itemList.firstChild) itemList.removeChild(itemList.firstChild);
+    while (itemList.firstChild) itemList.removeChild(itemList.firstChild);
     calculateTotal();
 
     sendMail(msg);
@@ -168,9 +170,9 @@ obtain(obtains, ({Client}, {SpreadSheet}, growl, {SheetInfo}, {Keypad}, {Item}, 
     return transactions.amendOrAddFromObject(newTA, 'uuid');
   }
 
-  var openQuantOL = data =>{
+  var openQuantOL = data => {
     overlays.mode = 'quant';
-    if(!data.unit) data.unit = 'ea';
+    if (!data.unit) data.unit = 'ea';
     quantOL.data = data;
     var conv = {
       'ea': 'each',
@@ -180,23 +182,23 @@ obtain(obtains, ({Client}, {SpreadSheet}, growl, {SheetInfo}, {Keypad}, {Item}, 
       'yd': 'yards'
     };
     quantUnit.textContent = conv[data.unit];
-    if(data.quantity) quantKey.input.value = data.quantity;
+    if (data.quantity) quantKey.input.value = data.quantity;
     else quantKey.input.value = '';
   }
 
-////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////
 
   var items = {};
 
-  var calculateTotal = ()=>{
-    var tot = µ('ms-item').reduce((acc,el)=>acc + el.getSubtotal(), 0);
-    totalCost.textContent = '$'+tot.toFixed(2);
+  var calculateTotal = () => {
+    var tot = µ('ms-item').reduce((acc, el) => acc + el.getSubtotal(), 0);
+    totalCost.textContent = '$' + tot.toFixed(2);
   }
 
-  var handleItem = (data)=>{
-    var it = µ('ms-item').find(it=>it.code == data.code);
+  var handleItem = (data) => {
+    var it = µ('ms-item').find(it => it.code == data.code);
     console.log('handling');
-    if(!it){
+    if (!it) {
       console.log('adding');
       data.quantity = 0;
       it = new Item(data);
@@ -204,7 +206,7 @@ obtain(obtains, ({Client}, {SpreadSheet}, growl, {SheetInfo}, {Keypad}, {Item}, 
       it.onUpdatePress = openQuantOL;
     }
     console.log(data.unit);
-    if(data.unit == 'ea'){
+    if (data.unit == 'ea') {
       console.log('here')
       it.setQuantity(it.quantity + 1);
       calculateTotal();
@@ -214,169 +216,169 @@ obtain(obtains, ({Client}, {SpreadSheet}, growl, {SheetInfo}, {Keypad}, {Item}, 
     }
   }
 
-  var findItem = (sku)=>{
-    if(!items[sku]){
-      inventory.objectFromKeyValue('code',sku).then((data)=>{
+  var findItem = (sku) => {
+    if (!items[sku]) {
+      inventory.objectFromKeyValue('code', sku).then((data) => {
         items[sku] = data;
         handleItem(items[sku]);
-      }).catch(err=>{
-        if(err == 'VAL_NOT_FOUND') console.log('adding new item');
+      }).catch(err => {
+        if (err == 'VAL_NOT_FOUND') console.log('adding new item');
       })
     } else handleItem(items[sku]);
 
   }
 
   var findUser = (userID) => {
-    mainGrowl.message('Finding User...','note',true);
-    profile.objectFromKeyValue('userID', userID).then(profile=>{
+    mainGrowl.message('Finding User...', 'note', true);
+    profile.objectFromKeyValue('userID', userID).then(profile => {
       mainGrowl.dismiss();
       console.log(profile);
-      if(overlays.mode == 'acctScan') accountDialog(profile);
-      else if(overlays.mode == 'welcomeScan' || overlays.mode == 'signInScan') signIn(profile);
-      else if(overlays.mode == 'coScan') recordTransaction(profile);
-      else if(overlays.mode == 'toolUserScan') getToolCheckouts(profile);
-    }).catch(err=>{
-      if(err == 'VAL_NOT_FOUND'){
+      if (overlays.mode == 'acctScan') accountDialog(profile);
+      else if (overlays.mode == 'welcomeScan' || overlays.mode == 'signInScan') signIn(profile);
+      else if (overlays.mode == 'coScan') recordTransaction(profile);
+      else if (overlays.mode == 'toolUserScan') getToolCheckouts(profile);
+    }).catch(err => {
+      if (err == 'VAL_NOT_FOUND') {
         newUserDialog(userID);
       }
     });
   }
 
-  var signIn = data =>{
+  var signIn = data => {
     data.location = config.location;
     data.checkIn = (new Date()).toLocaleString();
-    return activity.addRowFromObject(data).then(()=>{
-        signInName.textContent = data.firstName;
-        overlays.mode = 'signedIn';
-        setTimeout(()=>{
-          overlays.mode = 'welcomeScan';
-        }, 3000);
+    return activity.addRowFromObject(data).then(() => {
+      signInName.textContent = data.firstName;
+      overlays.mode = 'signedIn';
+      setTimeout(() => {
+        overlays.mode = 'welcomeScan';
+      }, 3000);
     });
   }
 
   var addUser = data => profile.amendOrAddFromObject(data, 'userID');
 
-  var onScan = (scanResult)=>{
-    if(scanResult.startsWith('CM')){
+  var onScan = (scanResult) => {
+    if (scanResult.startsWith('CM')) {
       overlays.mode = 'shopScan';
       findItem(scanResult);
-    } else if (scanResult.length == 14){
+    } else if (scanResult.length == 14) {
       findUser(scanResult);
-    } else if (scanResult.length == 16){
-      findUser(scanResult.substring(1,15));
-    } else if (scanResult == '0028'){
+    } else if (scanResult.length == 16) {
+      findUser(scanResult.substring(1, 15));
+    } else if (scanResult == '0028') {
       execSync('sudo shutdown now');
     }
   }
 
-  exports.app.start = ()=>{
+  exports.app.start = () => {
 
     /////////////////////////////////////////////////////////////////
     // element event handlers
 
     var screensaverTO = null;
 
-    var resetSS = ()=>{
+    var resetSS = () => {
       screensaver.classList.remove('active');
-      if(screensaverTO) clearTimeout(screensaverTO);
-      screensaverTO = setTimeout(()=>{
+      if (screensaverTO) clearTimeout(screensaverTO);
+      screensaverTO = setTimeout(() => {
         screensaver.classList.add('active');
       }, 30000);
     }
 
-    µ('body')[0].onclick = e=>{
+    µ('body')[0].onclick = e => {
       resetSS();
     }
 
     Object.defineProperty(overlays, 'mode', {
-      get: ()=>overlays.getAttribute('mode'),
-      set: md=>overlays.setAttribute('mode',md)
+      get: () => overlays.getAttribute('mode'),
+      set: md => overlays.setAttribute('mode', md)
     });
 
-    µ('input[required]', userInfoOL).forEach(el=>{
-      el.onchange = e=>el.classList.toggle('warn', !el.value.length);
+    µ('input[required]', userInfoOL).forEach(el => {
+      el.onchange = e => el.classList.toggle('warn', !el.value.length);
     })
 
-    µ('#manage').onclick = (e)=>{
+    µ('#manage').onclick = (e) => {
       e.preventDefault();
       overlays.mode = 'acctScan';
     }
 
-    startScan.onclick = e=>{
+    startScan.onclick = e => {
       e.preventDefault();
       overlays.mode = 'shopScan';
     }
 
-    signInButton.onclick = e=>{
+    signInButton.onclick = e => {
       e.preventDefault();
       overlays.mode = 'signInScan';
     }
 
-    borrow.onclick = e=>{
+    borrow.onclick = e => {
       e.preventDefault();
       overlays.mode = 'toolUserScan';
     }
 
-    µ('.cancelTool').forEach(el=>el.onclick = (e)=>{
+    µ('.cancelTool').forEach(el => el.onclick = (e) => {
       overlays.mode = 'welcomeScan';
       e.preventDefault();
     });
 
 
-    cancelScan.onclick = (e)=>{
+    cancelScan.onclick = (e) => {
       overlays.mode = 'welcomeScan';
       e.preventDefault();
     }
 
-    checkout.onclick = e=>{
+    checkout.onclick = e => {
       overlays.mode = 'coScan';
       projectDescription.value = '';
     }
 
-    cancelCO.onclick = e=>{
+    cancelCO.onclick = e => {
       overlays.mode = 'shopScan';
     }
 
-    coCancel.onclick = e=>{
+    coCancel.onclick = e => {
       e.preventDefault();
       overlays.mode = 'welcomeScan';
-      while(itemList.firstChild) itemList.removeChild(itemList.firstChild);
+      while (itemList.firstChild) itemList.removeChild(itemList.firstChild);
       calculateTotal();
     }
 
-    saveSignUp.onclick = (e)=>{
-      var data = µ('input', userInfoOL).reduce((acc,val)=>{
+    saveSignUp.onclick = (e) => {
+      var data = µ('input', userInfoOL).reduce((acc, val) => {
         acc[val.id] = val.value;
         return acc;
       }, userInfoOL.data);
-      if(data.firstName.length && data.email.length){
-        addUser(data).then(()=>signIn(data));
+      if (data.firstName.length && data.email.length) {
+        addUser(data).then(() => signIn(data));
         overlays.mode = 'signedIn';
       } else {
-        µ('input[required]', userInfoOL).forEach(el=>el.classList.add('warn'));
+        µ('input[required]', userInfoOL).forEach(el => el.classList.add('warn'));
       }
     }
 
-    cancelSignUp.onclick = e=>{
+    cancelSignUp.onclick = e => {
       overlays.mode = 'welcomeScan';
     }
 
-    cancelRcpt.onclick = e=>{
+    cancelRcpt.onclick = e => {
       e.preventDefault();
       overlays.mode = 'welcomeScan';
     }
 
     keyPad.input.value = 'CM';
 
-    keyPad.onSubmit = (text)=>{
+    keyPad.onSubmit = (text) => {
       onScan(text);
       keyPad.input.value = 'CM';
     }
 
-    quantAccept.onclick = (e)=>{
-      if(e) e.preventDefault();
+    quantAccept.onclick = (e) => {
+      if (e) e.preventDefault();
       var newQuant = parseFloat(quantKey.input.value);
-      if(!newQuant){
+      if (!newQuant) {
         quantOL.data.parentElement.removeChild(quantOL.data);
       } else {
         quantOL.data.setQuantity(newQuant);
@@ -385,12 +387,12 @@ obtain(obtains, ({Client}, {SpreadSheet}, growl, {SheetInfo}, {Keypad}, {Item}, 
       overlays.mode = 'shopScan';
     }
 
-    quantCancel.onclick = (e)=>{
+    quantCancel.onclick = (e) => {
       e.preventDefault();
       overlays.mode = 'shopScan';
     }
 
-    quantKey.onchange = (text)=>{
+    quantKey.onchange = (text) => {
     }
 
     ///////////////////////////////////////////////////
@@ -411,21 +413,21 @@ obtain(obtains, ({Client}, {SpreadSheet}, growl, {SheetInfo}, {Keypad}, {Item}, 
     var scanString = '';
     var scanTO = null;
 
-    document.onkeypress = (e)=> {
-      if(overlays.mode.includes('Scan')){
+    document.onkeypress = (e) => {
+      if (overlays.mode.includes('Scan')) {
         clearTimeout(scanTO);
-        if(e.keyCode > 32 && e.keyCode < 127){
+        if (e.keyCode > 32 && e.keyCode < 127) {
           scanString += e.key;
-        } else if(e.key == 'Enter'){
+        } else if (e.key == 'Enter') {
           resetSS();
           onScan(scanString);
           scanString = '';
         }
 
-        scanTO = setTimeout(()=> scanString = '', 50);
-      } else if(overlays.mode == 'quant'){
+        scanTO = setTimeout(() => scanString = '', 50);
+      } else if (overlays.mode == 'quant') {
         quantKey.input.focus();
-        if(e.key == 'Enter'){
+        if (e.key == 'Enter') {
           quantAccept.onclick();
         }
       }
