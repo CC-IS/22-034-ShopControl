@@ -1,6 +1,5 @@
 const { getDataFromSheet } = require('./server.js');
-const sheet = new getDataFromSheet("1k3eZkkqm1bWA3lk8gUgfoR6Xpb2vVaX4iaqnizi5iDc", "sh_users", "../../.credentials/trackerJWT_2.json");
-
+const sheet = new getDataFromSheet("1k3eZkkqm1bWA3lk8gUgfoR6Xpb2vVaX4iaqnizi5iDc", "sh_users", "/usr/local/src/parcel/.credentials/trackerJWT_2.json");
 const express = require('express');
 
 const app = express();
@@ -15,10 +14,10 @@ async function handler() {
         let machine = req.body.machine
         // console.log(access, id)
         if (!access.hasOwnProperty(id) || !(access[id].hasOwnProperty(machine))) {
-            res.send(`${0}`)
+            res.status(200).send(`${0}`)
         }
         else {
-            res.send(`${access[id][machine] || 0}`)
+            res.status(200).send(`${access[id][machine] || 0}`)
         }
     })
 
@@ -27,12 +26,12 @@ async function handler() {
         let id = req.body.id
         let machine = req.body.machine
         if (!access["admin"].hasOwnProperty(machine)) {
-            res.send("Invalid machine")
-            res.sendStatus(404)
+            res.status(404).send("Invalid machine");
+            return;
         }
         if (access.hasOwnProperty(id) && access[id][machine] == 1) {
-            res.send("Already a user")
-            res.sendStatus(200)
+            res.status(200).send("Already a user")
+            return;
         }
         if (!access.hasOwnProperty(id)) {
             try {
@@ -44,12 +43,12 @@ async function handler() {
                         })
                     })
                 })
-                _res.send("Added and gave access")
-                _res.sendStatus(200)
+                _res.status(200).send("Added and given access")
+                return;
             }
             catch {
-                _res.send("Error adding user")
-                _res.sendStatus(500)
+                _res.status(500).send("Error adding user")
+                return;
             }
 
 
@@ -57,15 +56,17 @@ async function handler() {
         else {
             access[id][machine] = 1
             sheet.setsheet(access)
-            res.send("Updated user")
-            res.sendStatus(200)
+            _res.status(200).send("Updated user")
+
+            // res.send("Updated user")
+            // res.sendStatus(200)
 
         }
 
 
         // console.log(access)
 
-        res.sendStatus(200)
+        // res.sendStatus(200)
     })
 
 
