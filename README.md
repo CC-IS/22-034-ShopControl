@@ -52,7 +52,7 @@ _<span style="text-decoration:underline;">Ubuntu 18.04 Server</span>_
 2. Install the operating system on the target machine.
 3. Connect the target machine to an active ethernet connection, or configure wifi manually.
 4. After installation, start the machine, and login with the credentials defined in the installation process.
-5. Run this command in the terminal prompt: ```bash <(curl -sL https://raw.githubusercontent.com/CC-IS/parcel/master/install/web-install.sh) -a USERNAME -r REPO```
+5. Run this command in the terminal prompt: ```bash <(curl -sL https://parcel.makerspace.cc) -a USERNAME -r REPO```
 
 ## Configuration
 
