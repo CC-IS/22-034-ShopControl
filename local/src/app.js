@@ -1,8 +1,8 @@
 'use strict';
 
 var remote = require('electron').remote;
-var appRoot = remote.getGlobal('appRoot');
-var config = remote.getGlobal('config');
+//var appRoot = remote.getGlobal('appRoot');
+//var config = remote.getGlobal('config');
 var os = require('os');
 const handler = require('./server_handler');
 handler();
@@ -30,10 +30,10 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
     'https://www.googleapis.com/auth/spreadsheets'
   ];
 
-  var credDir = `${appRoot}/.credentials/`;
-  if (os.platform() == 'linux') credDir = '/boot/.credentials/'
+  //var credDir = `${appRoot}/.credentials/`;
+  if (os.platform() == 'linux') window.credDir = '/boot/.credentials/'
 
-  var auth = Client(scopes, credDir + 'trackerJWT_2.json');
+  var auth = Client(scopes, window.credDir + 'trackerJWT_2.json');
 
   var materials = new SpreadSheet({
     auth: auth,

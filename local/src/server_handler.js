@@ -1,5 +1,5 @@
 const { getDataFromSheet } = require('./server.js');
-const sheet = new getDataFromSheet("1k3eZkkqm1bWA3lk8gUgfoR6Xpb2vVaX4iaqnizi5iDc", "sh_users", "/usr/local/src/parcel/.credentials/trackerJWT_2.json");
+const sheet = new getDataFromSheet("1k3eZkkqm1bWA3lk8gUgfoR6Xpb2vVaX4iaqnizi5iDc", "sh_users", window.credDir+"trackerJWT_2.json");
 const express = require('express');
 
 const app = express();
