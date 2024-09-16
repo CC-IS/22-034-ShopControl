@@ -308,7 +308,7 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
     } else if (scanResult.length == 16) {
       findUser(scanResult.substring(1, 15));
     } else if (scanResult == '0028') {
-      execSync('sudo systemctl electron stop');
+      execSync('sudo systemctl stop electron');
     }
   }
 
