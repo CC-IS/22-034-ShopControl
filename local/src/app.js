@@ -219,7 +219,6 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
     if (!it) {
       console.log('adding');
       data.quantity = 0;
-      data.price *= 100;
       it = new Item(data);
       itemList.appendChild(it);
       it.onUpdatePress = openQuantOL;
@@ -449,7 +448,6 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
     });
 
     example.onUpdatePress = openQuantOL;
-    example.price *=100;
     itemList.appendChild(example);
 
     var scanString = '';
