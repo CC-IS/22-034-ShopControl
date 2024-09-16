@@ -21,6 +21,10 @@
 	color: #449;
 }
 
+:host .credit {
+  color: #0F0;
+}
+
 :host .unit {
 	margin-right: 10vw;
 }

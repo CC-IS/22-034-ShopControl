@@ -107,6 +107,7 @@ class SheetInfo extends Array{
     var _this = this;
     return this.initProm.then(()=>{
       return _this.rangeFromKeyValue(key, obj[key]).then(range=>{
+        console.log(range);
         return _this.amendRowFromObject(obj, range);
       }).catch(err=>{
         if(err == 'VAL_NOT_FOUND') return _this.addRowFromObject(obj);

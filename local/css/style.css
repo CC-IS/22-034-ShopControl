@@ -531,6 +531,11 @@ div.title {
 	--dialog-height: 30vh;
 }
 
+#signInOL .balanceOut {
+	font-size: .5em;
+	color:  #F3B61D;
+}
+
 #acctScan {
 	--dialog-height: 35vh;
 }

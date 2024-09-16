@@ -1,6 +1,8 @@
 'use strict';
 
-var remote = require('electron').remote;
+// var electron = require('electron');
+// const {ipcRenderer} = require('electron');
+// console.log(electron);
 //var appRoot = remote.getGlobal('appRoot');
 //var config = remote.getGlobal('config');
 var os = require('os');
@@ -47,12 +49,12 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
 
   var inventory = new SheetInfo(materials, 'Inventory');
   var transactions = new SheetInfo(materials, 'Transactions');
-  var balances = new SheetInfo(materials, 'UserBalances');
   var tools = new SheetInfo(materials, 'Tools');
   var toolCheckouts = new SheetInfo(materials, 'ToolCheckouts');
 
   var profile = new SheetInfo(users, 'Users');
   var activity = new SheetInfo(users, 'Activity');
+  var balances = new SheetInfo(users, 'Balances');
 
   var imgCanv = µ('+canvas');
   const headerImg = new Image();
@@ -78,6 +80,7 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
   var accountDialog = acct => {
     userInfoOL.data = acct;
     overlays.mode = 'acct';
+    mainGrowl.dismiss();
     for (var key in acct) {
       if (acct.hasOwnProperty(key) && key != 'userID') {
         if (key != 'mailList') µ(`#${key}`, userInfoOL).value = acct[key];
@@ -110,6 +113,15 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
 
   }
 
+  var getFiscalYear = ()=>{
+    var d = new Date();
+    var month = d.getMonth();
+    var year = d.getFullYear();
+    year = Number(year.toString().substr(-2));
+    if(month >= 7) year+=1;
+    return year;
+  }
+
   var recordTransaction = profile => {
     console.log(profile);
     var cart = µ('ms-item');
@@ -139,7 +151,7 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
       html: `<div style='text-align: center; font-family: sans-serif;'>
         <img class='header' style='width: 50%; height: auto;' src="cid:header"></img>
         <h1 style='color: 2B388F;'>Thank you for using the Class of '69 Makerpace! </h1>
-        <p>Please find your receipt code below:</p>
+        <p>Share your project :</p>
         <img style="display: inline-block" src="cid:qrcode"></img>
         <br />
         <strong>${newTA.uuid}</strong>
@@ -167,6 +179,12 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
 
     sendMail(msg);
     //uuidSpan.textContent = newTA.uuid;
+    balances.objectFromKeyValue("email", profile.email).then(bal=>{
+      console.log(bal);
+      bal[getFiscalYear()+"_Actual"] -= newTA.cartTotal;
+      console.log(bal);
+      balances.amendOrAddFromObject(bal,"email");
+    });
     return transactions.amendOrAddFromObject(newTA, 'uuid');
   }
 
@@ -192,7 +210,7 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
 
   var calculateTotal = () => {
     var tot = µ('ms-item').reduce((acc, el) => acc + el.getSubtotal(), 0);
-    totalCost.textContent = '$' + tot.toFixed(2);
+    totalCost.textContent = '₡' + tot.toFixed(0);
   }
 
   var handleItem = (data) => {
@@ -201,6 +219,7 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
     if (!it) {
       console.log('adding');
       data.quantity = 0;
+      data.price *= 100;
       it = new Item(data);
       itemList.appendChild(it);
       it.onUpdatePress = openQuantOL;
@@ -231,14 +250,24 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
   var findUser = (userID) => {
     mainGrowl.message('Finding User...', 'note', true);
     profile.objectFromKeyValue('userID', userID).then(profile => {
-      mainGrowl.dismiss();
       console.log(profile);
       if (overlays.mode == 'acctScan') accountDialog(profile);
       else if (overlays.mode == 'welcomeScan' || overlays.mode == 'signInScan') signIn(profile);
-      else if (overlays.mode == 'coScan') recordTransaction(profile);
-      else if (overlays.mode == 'toolUserScan') getToolCheckouts(profile);
+      else if (overlays.mode == 'coScan'){
+        mainGrowl.dismiss();
+        balances.objectFromKeyValue('email',profile.email).then(bal=>{
+          if(bal[getFiscalYear()+"_Actual"] > µ('ms-item').reduce((acc, el) => acc + el.getSubtotal(), 0)){
+            recordTransaction(profile);
+          } else {
+            mainGrowl.message('Insufficient Balance; see a manager', 'error');
+          }
+        });
+
+      } else if (overlays.mode == 'toolUserScan') getToolCheckouts(profile);
+      else mainGrowl.dismiss();
     }).catch(err => {
       if (err == 'VAL_NOT_FOUND') {
+        mainGrowl.dismiss();
         newUserDialog(userID);
       }
     });
@@ -249,14 +278,26 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
     data.checkIn = (new Date()).toLocaleString();
     return activity.addRowFromObject(data).then(() => {
       signInName.textContent = data.firstName;
-      overlays.mode = 'signedIn';
-      setTimeout(() => {
-        overlays.mode = 'welcomeScan';
-      }, 3000);
+      balances.objectFromKeyValue("email", data.email).then(bal=>{
+        mainGrowl.dismiss();
+        acctBalance.textContent = bal[getFiscalYear()+"_Actual"];
+        overlays.mode = 'signedIn';
+        setTimeout(() => {
+          overlays.mode = 'welcomeScan';
+        }, 5000);
+      });
     });
   }
 
-  var addUser = data => profile.amendOrAddFromObject(data, 'userID');
+  var addUser = data => {
+    profile.amendOrAddFromObject(data, 'userID');
+    return balances.objectFromKeyValue("email",data.email).catch(err=>{
+      var newBal = {email: data.email};
+      newBal[getFiscalYear()+"_Actual"]= 1000;
+      newBal[getFiscalYear()+"_Accrued"]= 0;
+      return balances.amendOrAddFromObject(newBal,'email');
+    });
+  }
 
   var onScan = (scanResult) => {
     if (scanResult.startsWith('CM')) {
@@ -267,7 +308,7 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
     } else if (scanResult.length == 16) {
       findUser(scanResult.substring(1, 15));
     } else if (scanResult == '0028') {
-      execSync('sudo shutdown now');
+      execSync('sudo systemctl electron stop');
     }
   }
 
@@ -283,7 +324,8 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
       if (screensaverTO) clearTimeout(screensaverTO);
       screensaverTO = setTimeout(() => {
         screensaver.classList.add('active');
-      }, 30000);
+        overlays.mode = 'welcomeScan';
+      }, 60000);
     }
 
     µ('body')[0].onclick = e => {
@@ -407,7 +449,7 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
     });
 
     example.onUpdatePress = openQuantOL;
-
+    example.price *=100;
     itemList.appendChild(example);
 
     var scanString = '';
@@ -432,6 +474,18 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
         }
       }
     };
+
+    document.onkeydown = (e)=>{
+      //console.log(e.keyCode);
+      if(e.keyCode == 27){
+        //console.log('quitting');
+        //window.electron.quit();
+        //app.quit();
+        //console.log("here");
+        //onScan("20118000606604");
+        //onScan("20118000497475");
+      }
+    }
   };
 
   provide(exports);
