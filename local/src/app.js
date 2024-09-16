@@ -217,11 +217,16 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
     var it = µ('ms-item').find(it => it.code == data.code);
     console.log('handling');
     if (!it) {
-      console.log('adding');
-      data.quantity = 0;
-      it = new Item(data);
-      itemList.appendChild(it);
-      it.onUpdatePress = openQuantOL;
+      if(data.passcode){
+        openQuantOL(data);
+      } else {
+        console.log('adding');
+        data.quantity = 0;
+        it = new Item(data);
+        itemList.appendChild(it);
+        it.onUpdatePress = openQuantOL;
+      }
+
     }
     console.log(data.unit);
     if (data.unit == 'ea') {
@@ -468,7 +473,16 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
       } else if (overlays.mode == 'quant') {
         quantKey.input.focus();
         if (e.key == 'Enter') {
-          quantAccept.onclick();
+          if(quantOL.data?.passcode && quantKey.input.value == quantOL.data?.passcode){
+            console.log(quantOL.data.passcode);
+            var it = new Item(quantOL.data);
+            it.quantity = 1;
+            itemList.appendChild(it);
+            it.onUpdatePress = openQuantOL;
+            overlays.mode = 'shopScan';
+            quantOL.data.parentElement.removeChild(quantOL.data);
+            return;
+          } else quantAccept.onclick();
         }
       }
     };
