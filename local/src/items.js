@@ -35,9 +35,9 @@ obtain([], ()=>{
               <div class='priceDiv'>\
                 <span class='quantity'>${_this.quantity}</span>\
                 x @\
-                <span class='price ${_this.price < 0?'credit':''}'>₡${_this.price.toFixed(0)}</span>\
+                <span class='price ${_this.price < 0?'credit':''}'>₡${Math.abs(_this.price.toFixed(0))}</span>\
                 <span class='unit'>/ ${_this.unit}</span>\
-                <span class='subtotal'>₡${(_this.price * _this.quantity).toFixed(0)}</span>\
+                <span class='subtotal  ${_this.price < 0?'credit':''}'>₡${(Math.abs(_this.price) * _this.quantity).toFixed(0)}</span>\
               </div>\
               <div class='opts'>
                 <span class='button delete'>Remove</span>

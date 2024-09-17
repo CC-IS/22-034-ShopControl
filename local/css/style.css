@@ -102,6 +102,10 @@ body {
 	padding-right: 1vw;
 }
 
+.feedback #totalCost.credit {
+	color: #0f0;
+}
+
 .noteDiv {
 	position: absolute;
 	left: 2vw;

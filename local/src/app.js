@@ -122,7 +122,7 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
     return year;
   }
 
-  var recordTransaction = profile => {
+  var recordTransaction = (profile, bal) => {
     console.log(profile);
     var cart = µ('ms-item');
     var list = cart.map(item => item.listify())
@@ -136,7 +136,10 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
       projectDescription: projectDescription.value
     }
 
+    var credits = cart.reduce((acc, item) => acc + item.getSubtotal()<0?-item.getSubtotal():0, 0);
+
     console.log(newTA);
+    console.log(credits);
 
     overlays.mode = 'rcpt';
     qr.toCanvas(qrcodeCV, newTA.uuid);
@@ -179,12 +182,15 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
 
     sendMail(msg);
     //uuidSpan.textContent = newTA.uuid;
-    balances.objectFromKeyValue("email", profile.email).then(bal=>{
-      console.log(bal);
-      bal[getFiscalYear()+"_Actual"] -= newTA.cartTotal;
-      console.log(bal);
-      balances.amendOrAddFromObject(bal,"email");
-    });
+    // balances.objectFromKeyValue("email", profile.email).then(bal=>{
+    //   console.log(bal);
+    //   bal[getFiscalYear()+"_Actual"] -= newTA.cartTotal;
+    //   console.log(bal);
+    //   balances.amendOrAddFromObject(bal,"email");
+    // });
+    bal[getFiscalYear()+"_Actual"] -= newTA.cartTotal;
+    bal[getFiscalYear()+"_Accrued"] = Number(bal[getFiscalYear()+"_Accrued"]) + credits;
+    balances.amendOrAddFromObject(bal,"email");
     return transactions.amendOrAddFromObject(newTA, 'uuid');
   }
 
@@ -210,7 +216,8 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
 
   var calculateTotal = () => {
     var tot = µ('ms-item').reduce((acc, el) => acc + el.getSubtotal(), 0);
-    totalCost.textContent = '₡' + tot.toFixed(0);
+    totalCost.textContent = '₡' + Math.abs(tot).toFixed(0);
+    totalCost.classList.toggle('credit',tot<0);
   }
 
   var handleItem = (data) => {
@@ -261,7 +268,7 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
         mainGrowl.dismiss();
         balances.objectFromKeyValue('email',profile.email).then(bal=>{
           if(bal[getFiscalYear()+"_Actual"] > µ('ms-item').reduce((acc, el) => acc + el.getSubtotal(), 0)){
-            recordTransaction(profile);
+            recordTransaction(profile,bal);
           } else {
             mainGrowl.message('Insufficient Balance; see a manager', 'error');
           }
@@ -480,7 +487,8 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
             itemList.appendChild(it);
             it.onUpdatePress = openQuantOL;
             overlays.mode = 'shopScan';
-            quantOL.data.parentElement.removeChild(quantOL.data);
+            quantOL.data = null;
+            calculateTotal();
             return;
           } else quantAccept.onclick();
         }
