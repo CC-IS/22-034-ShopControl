@@ -407,6 +407,9 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
       if (data.firstName.length && data.email.length) {
         addUser(data).then(() => signIn(data));
         overlays.mode = 'signedIn';
+        setTimeout(() => {
+          overlays.mode = 'welcomeScan';
+        }, 5000);
       } else {
         µ('input[required]', userInfoOL).forEach(el => el.classList.add('warn'));
       }
