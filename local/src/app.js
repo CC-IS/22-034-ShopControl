@@ -153,7 +153,7 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
       subject: 'Makerspace Transaction Receipt',
       html: `<div style='text-align: center; font-family: sans-serif;'>
         <img class='header' style='width: 50%; height: auto;' src="cid:header"></img>
-        <h1 style='color: 2B388F;'>Thank you for using the Class of '69 Makerpace! </h1>
+        <h1 style='color: 2B3888E;'>Thank you for using the Class of '69 Makerpace! </h1>
         <p>Share your project :</p>
         <img style="display: inline-block" src="cid:qrcode"></img>
         <br />
