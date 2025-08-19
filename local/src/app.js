@@ -258,6 +258,13 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
 
   }
 
+  var addBalanceIfNotFound = email =>{
+    var newBal = {email: email};
+    newBal[getFiscalYear()+"_Actual"]= 1000;
+    newBal[getFiscalYear()+"_Accrued"]= 0;
+    return balances.amendOrAddFromObject(newBal,'email');
+  }
+
   var findUser = (userID) => {
     mainGrowl.message('Finding User...', 'note', true);
     profile.objectFromKeyValue('userID', userID).then(profile => {
@@ -272,6 +279,15 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
           } else {
             mainGrowl.message('Insufficient Balance; see a manager', 'error');
           }
+        }).catch(err=>{
+          addBalanceIfNotFound(email).then(()=>{
+            if(bal[getFiscalYear()+"_Actual"] > µ('ms-item').reduce((acc, el) => acc + el.getSubtotal(), 0)){
+              recordTransaction(profile,bal);
+            } else {
+              mainGrowl.message('Insufficient Balance; see a manager', 'error');
+            }
+          })
+          //return balances.amendOrAddFromObject(newBal,'email');
         });
 
       } else if (overlays.mode == 'toolUserScan') getToolCheckouts(profile);
@@ -291,6 +307,11 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
       signInName.textContent = data.firstName;
       balances.objectFromKeyValue("email", data.email).then(bal=>{
         mainGrowl.dismiss();
+        console.log(bal[getFiscalYear()+"_Actual"] === undefined);
+        if(bal[getFiscalYear()+"_Actual"] === undefined){
+          bal[getFiscalYear()+"_Actual"] = 1000, bal[getFiscalYear()+"_Accrued"] = 0;
+          addBalanceIfNotFound(data.email);
+        } 
         acctBalance.textContent = bal[getFiscalYear()+"_Actual"];
         overlays.mode = 'signedIn';
         setTimeout(() => {
@@ -303,10 +324,7 @@ obtain(obtains, ({ Client }, { SpreadSheet }, growl, { SheetInfo }, { Keypad }, 
   var addUser = data => {
     profile.amendOrAddFromObject(data, 'userID');
     return balances.objectFromKeyValue("email",data.email).catch(err=>{
-      var newBal = {email: data.email};
-      newBal[getFiscalYear()+"_Actual"]= 1000;
-      newBal[getFiscalYear()+"_Accrued"]= 0;
-      return balances.amendOrAddFromObject(newBal,'email');
+      return addBalanceIfNotFound(data.email);
     });
   }
 
